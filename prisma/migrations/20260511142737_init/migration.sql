@@ -1,3 +1,9 @@
+-- CreateEnum
+CREATE TYPE "task_type" AS ENUM ('task', 'bug', 'story', 'epic');
+
+-- CreateEnum
+CREATE TYPE "task_priority" AS ENUM ('low', 'medium', 'high', 'critical');
+
 -- CreateTable
 CREATE TABLE "GlobalRoles" (
     "id" SERIAL NOT NULL,
@@ -111,6 +117,8 @@ CREATE TABLE "Tasks" (
     "message_count" INTEGER NOT NULL,
     "project_id" INTEGER NOT NULL,
     "position" INTEGER NOT NULL,
+    "type" "task_type" NOT NULL,
+    "priority" "task_priority" NOT NULL,
     "tags" JSONB NOT NULL,
     "blocked_by" INTEGER NOT NULL,
     "start_timestamp" TIMESTAMP(3) NOT NULL,

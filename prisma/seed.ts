@@ -214,7 +214,9 @@ async function main() {
         messageCount: 2,
         projectId: 1,
         position: 1,
-        tags: { uuid: "tag-arch", title: "Architecture" },
+        type: "epic",
+        priority: "medium",
+        tags: [{ uuid: "tag-arch", title: "Architecture" }],
         blockedBy: 0,
         startTimestamp: new Date("2026-01-11T09:00:00.000Z"),
         endTimestamp: new Date("2026-01-12T18:00:00.000Z")
@@ -230,7 +232,9 @@ async function main() {
         messageCount: 3,
         projectId: 1,
         position: 2,
-        tags: { uuid: "tag-backend", title: "Backend" },
+        type: "story",
+        priority: "critical",
+        tags: [{ uuid: "tag-backend", title: "Backend" }],
         blockedBy: 1,
         startTimestamp: new Date("2026-01-13T09:00:00.000Z"),
         endTimestamp: new Date("2026-01-20T18:00:00.000Z")
@@ -246,7 +250,9 @@ async function main() {
         messageCount: 1,
         projectId: 2,
         position: 1,
-        tags: { uuid: "tag-frontend", title: "Frontend" },
+        type: "bug",
+        priority: "high",
+        tags: [{ uuid: "tag-frontend", title: "Frontend" }, { uuid: "tagfdfssdfntend", title: "Design" }],
         blockedBy: 0,
         startTimestamp: new Date("2026-02-02T10:00:00.000Z"),
         endTimestamp: new Date("2026-02-05T18:00:00.000Z")
@@ -262,7 +268,9 @@ async function main() {
         messageCount: 2,
         projectId: 3,
         position: 1,
-        tags: { uuid: "tag-devops", title: "DevOps" },
+        type: "task",
+        priority: "low",
+        tags: [{ uuid: "tag-devops", title: "DevOps" }],
         blockedBy: 0,
         startTimestamp: new Date("2026-03-02T09:00:00.000Z"),
         endTimestamp: new Date("2026-03-04T17:00:00.000Z")

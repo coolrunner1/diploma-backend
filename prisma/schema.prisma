@@ -8,8 +8,8 @@ datasource db {
 }
 
 model GlobalRole {
-  id          Int    @id @default(autoincrement())
-  title       String @db.VarChar(255)
+  id          Int     @id @default(autoincrement())
+  title       String  @db.VarChar(255)
   description String?
   users       User[]
 
@@ -127,24 +127,40 @@ model ProjectUser {
   @@map("ProjectUser")
 }
 
+enum task_type {
+  task
+  bug
+  story
+  epic
+}
+
+enum task_priority {
+  low
+  medium
+  high
+  critical
+}
+
 model Task {
-  id             Int          @id @default(autoincrement())
-  uuid           String       @db.VarChar(255)
-  title          String       @db.VarChar(255)
+  id             Int            @id @default(autoincrement())
+  uuid           String         @db.VarChar(255)
+  title          String         @db.VarChar(255)
   description    String
-  commentSummary String       @map("commentSummary") @db.VarChar(255)
-  userId         Int          @map("user_id")
-  statusId       Int          @map("status_id")
-  messageCount   Int          @map("message_count")
-  projectId      Int          @map("project_id")
+  commentSummary String         @map("commentSummary") @db.VarChar(255)
+  userId         Int            @map("user_id")
+  statusId       Int            @map("status_id")
+  messageCount   Int            @map("message_count")
+  projectId      Int            @map("project_id")
   position       Int
+  type           task_type
+  priority       task_priority
   tags           Json
-  blockedBy      Int          @map("blocked_by")
-  startTimestamp DateTime     @map("start_timestamp")
-  endTimestamp   DateTime     @map("end_timestamp")
-  project        Project      @relation(fields: [projectId], references: [id])
-  user           User         @relation(fields: [userId], references: [id])
-  status         Status       @relation(fields: [statusId], references: [id])
+  blockedBy      Int            @map("blocked_by")
+  startTimestamp DateTime       @map("start_timestamp")
+  endTimestamp   DateTime       @map("end_timestamp")
+  project        Project        @relation(fields: [projectId], references: [id])
+  user           User           @relation(fields: [userId], references: [id])
+  status         Status         @relation(fields: [statusId], references: [id])
   comments       Comment[]
   taskRoleUser   TaskRoleUser[]
 
@@ -175,11 +191,11 @@ model Comment {
 }
 
 model TaskRoleUser {
-  userId Int      @map("user_id")
-  taskId Int      @map("task_id")
-  roleId Int      @map("role_id")
-  user   User     @relation(fields: [userId], references: [id])
-  task   Task     @relation(fields: [taskId], references: [id])
+  userId Int         @map("user_id")
+  taskId Int         @map("task_id")
+  roleId Int         @map("role_id")
+  user   User        @relation(fields: [userId], references: [id])
+  task   Task        @relation(fields: [taskId], references: [id])
   role   ProjectRole @relation(fields: [roleId], references: [id])
 
   @@id([userId, taskId, roleId])

@@ -3,10 +3,10 @@ import { z } from "zod";
 const string255 = z.string().min(1).max(255);
 const optionalString255 = z.string().max(255).optional().nullable();
 const isoDate = z.coerce.date();
-const tagSchema = z.object({
+const tagSchema = z.object([{
   uuid: string255,
   title: string255
-});
+}]);
 
 export const globalRoleCreate = z.object({
   title: string255,

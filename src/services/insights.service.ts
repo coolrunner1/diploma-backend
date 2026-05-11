@@ -35,7 +35,7 @@ export const insightsService = {
     });
   },
 
-  getProjectBoard(projectId: number) {
+  async getProjectBoard(projectId: number) {
     return prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -47,11 +47,39 @@ export const insightsService = {
         tasks: {
           include: {
             status: true,
-            user: true
+            user: {
+              select: {
+                id: true,
+                uuid: true,
+                login: true,
+                name: true,
+                surname: true,
+                bgColor: true,
+                email: true,
+                globalRoleId: true,
+                createdAt: true
+              }
+            }
           },
           orderBy: [{ position: "asc" }]
         }
       }
+    }).then((project) => {
+      if (!project) return null;
+
+      return {
+        ...project,
+
+        projectStatus: project.projectStatus.map((ps) => ({
+          ...ps.status
+        })),
+
+        tasks: project.tasks.map((task) => ({
+          ...task,
+          assignee: task.user,
+          user: undefined
+        }))
+      };
     });
   },
 
