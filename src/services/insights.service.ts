@@ -82,7 +82,7 @@ export const insightsService = {
         projectId,
         statusId,
         OR: [
-          { name: { contains: search, mode: "insensitive" } },
+          { title: { contains: search, mode: "insensitive" } },
           { description: { contains: search, mode: "insensitive" } },
           { commentSummary: { contains: search, mode: "insensitive" } }
         ]

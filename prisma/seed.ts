@@ -14,41 +14,32 @@ async function main() {
   await prisma.project.deleteMany();
   await prisma.company.deleteMany();
   await prisma.user.deleteMany();
-  await prisma.taskRole.deleteMany();
   await prisma.status.deleteMany();
   await prisma.projectRole.deleteMany();
   await prisma.globalRole.deleteMany();
 
   await prisma.globalRole.createMany({
     data: [
-      { id: 1, name: "SuperAdmin", description: "System administrator" },
-      { id: 2, name: "Manager", description: "Company manager" },
-      { id: 3, name: "Member", description: "Regular member" }
+      { id: 1, title: "SuperAdmin", description: "System administrator" },
+      { id: 2, title: "Manager", description: "Company manager" },
+      { id: 3, title: "Member", description: "Regular member" }
     ]
   });
 
   await prisma.projectRole.createMany({
     data: [
-      { id: 1, name: "Product Owner", description: "Defines requirements" },
-      { id: 2, name: "Developer", description: "Implements tasks" },
-      { id: 3, name: "QA", description: "Validates delivery" }
-    ]
-  });
-
-  await prisma.taskRole.createMany({
-    data: [
-      { id: 1, name: "Assignee", description: "Main executor" },
-      { id: 2, name: "Reviewer", description: "Reviews changes" },
-      { id: 3, name: "Watcher", description: "Tracks progress" }
+      { id: 1, uuid: "proj-role-1", title: "Product Owner", description: "Defines requirements" },
+      { id: 2, uuid: "proj-role-2", title: "Developer", description: "Implements tasks" },
+      { id: 3, uuid: "proj-role-3", title: "QA", description: "Validates delivery" }
     ]
   });
 
   await prisma.status.createMany({
     data: [
-      { id: 1, name: "Backlog", description: "Waiting", position: 1 },
-      { id: 2, name: "In Progress", description: "Active work", position: 2 },
-      { id: 3, name: "Review", description: "Under review", position: 3 },
-      { id: 4, name: "Done", description: "Completed", position: 4 }
+      { id: 1, uuid: "status-1", title: "Backlog", description: "Waiting", position: 1, bgColor: "#9ca3af", final: false },
+      { id: 2, uuid: "status-2", title: "In Progress", description: "Active work", position: 2, bgColor: "#3b82f6", final: false },
+      { id: 3, uuid: "status-3", title: "Review", description: "Under review", position: 3, bgColor: "#f59e0b", final: false },
+      { id: 4, uuid: "status-4", title: "Done", description: "Completed", position: 4, bgColor: "#10b981", final: true }
     ]
   });
 
@@ -56,32 +47,48 @@ async function main() {
     data: [
       {
         id: 1,
+        uuid: "user-1",
         login: "admin",
         password: "admin123",
+        name: "Admin",
+        surname: "Root",
+        bgColor: "#111827",
         email: "admin@example.com",
         globalRoleId: 1,
         createdAt: new Date("2026-01-01T10:00:00.000Z")
       },
       {
         id: 2,
+        uuid: "user-2",
         login: "alice",
         password: "alice123",
+        name: "Alice",
+        surname: "Stone",
+        bgColor: "#2563eb",
         email: "alice@example.com",
         globalRoleId: 2,
         createdAt: new Date("2026-01-02T10:00:00.000Z")
       },
       {
         id: 3,
+        uuid: "user-3",
         login: "bob",
         password: "bob123",
+        name: "Bob",
+        surname: "Mills",
+        bgColor: "#7c3aed",
         email: "bob@example.com",
         globalRoleId: 3,
         createdAt: new Date("2026-01-03T10:00:00.000Z")
       },
       {
         id: 4,
+        uuid: "user-4",
         login: "carol",
         password: "carol123",
+        name: "Carol",
+        surname: "West",
+        bgColor: "#db2777",
         email: "carol@example.com",
         globalRoleId: 3,
         createdAt: new Date("2026-01-04T10:00:00.000Z")
@@ -93,6 +100,7 @@ async function main() {
     data: [
       {
         id: 1,
+        uuid: "company-1",
         name: "Acme Corp",
         description: "Main customer",
         phoneNumber: "+1-555-1111",
@@ -101,6 +109,7 @@ async function main() {
       },
       {
         id: 2,
+        uuid: "company-2",
         name: "Globex",
         description: "Second customer",
         phoneNumber: "+1-555-2222",
@@ -114,24 +123,30 @@ async function main() {
     data: [
       {
         id: 1,
-        name: "Task Platform API",
+        uuid: "project-1",
+        title: "Task Platform API",
         description: "Backend for task management",
+        editableStatuses: true,
         companyId: 1,
         startDate: new Date("2026-01-10"),
         endDate: new Date("2026-07-30")
       },
       {
         id: 2,
-        name: "Client Dashboard",
+        uuid: "project-2",
+        title: "Client Dashboard",
         description: "Frontend dashboard",
+        editableStatuses: false,
         companyId: 1,
         startDate: new Date("2026-02-01"),
         endDate: null
       },
       {
         id: 3,
-        name: "Internal Ops",
+        uuid: "project-3",
+        title: "Internal Ops",
         description: "Automation tools",
+        editableStatuses: false,
         companyId: 2,
         startDate: new Date("2026-03-01"),
         endDate: null
@@ -190,7 +205,8 @@ async function main() {
     data: [
       {
         id: 1,
-        name: "Design DB schema",
+        uuid: "task-1",
+        title: "Design DB schema",
         description: "Prepare relational schema for MVP",
         commentSummary: "Initial schema draft",
         userId: 2,
@@ -198,13 +214,15 @@ async function main() {
         messageCount: 2,
         projectId: 1,
         position: 1,
+        tags: { uuid: "tag-arch", title: "Architecture" },
         blockedBy: 0,
         startTimestamp: new Date("2026-01-11T09:00:00.000Z"),
         endTimestamp: new Date("2026-01-12T18:00:00.000Z")
       },
       {
         id: 2,
-        name: "Implement auth endpoints",
+        uuid: "task-2",
+        title: "Implement auth endpoints",
         description: "Build login and role checks",
         commentSummary: "Auth in progress",
         userId: 3,
@@ -212,13 +230,15 @@ async function main() {
         messageCount: 3,
         projectId: 1,
         position: 2,
+        tags: { uuid: "tag-backend", title: "Backend" },
         blockedBy: 1,
         startTimestamp: new Date("2026-01-13T09:00:00.000Z"),
         endTimestamp: new Date("2026-01-20T18:00:00.000Z")
       },
       {
         id: 3,
-        name: "Create dashboard layout",
+        uuid: "task-3",
+        title: "Create dashboard layout",
         description: "Build initial UI skeleton",
         commentSummary: "Awaiting review",
         userId: 4,
@@ -226,13 +246,15 @@ async function main() {
         messageCount: 1,
         projectId: 2,
         position: 1,
+        tags: { uuid: "tag-frontend", title: "Frontend" },
         blockedBy: 0,
         startTimestamp: new Date("2026-02-02T10:00:00.000Z"),
         endTimestamp: new Date("2026-02-05T18:00:00.000Z")
       },
       {
         id: 4,
-        name: "Set up CI pipeline",
+        uuid: "task-4",
+        title: "Set up CI pipeline",
         description: "Automate build and tests",
         commentSummary: "CI configured",
         userId: 1,
@@ -240,6 +262,7 @@ async function main() {
         messageCount: 2,
         projectId: 3,
         position: 1,
+        tags: { uuid: "tag-devops", title: "DevOps" },
         blockedBy: 0,
         startTimestamp: new Date("2026-03-02T09:00:00.000Z"),
         endTimestamp: new Date("2026-03-04T17:00:00.000Z")

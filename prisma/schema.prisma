@@ -9,7 +9,7 @@ datasource db {
 
 model GlobalRole {
   id          Int    @id @default(autoincrement())
-  name        String @db.VarChar(255)
+  title       String @db.VarChar(255)
   description String?
   users       User[]
 
@@ -18,37 +18,37 @@ model GlobalRole {
 
 model ProjectRole {
   id                Int                 @id @default(autoincrement())
-  name              String              @db.VarChar(255)
+  uuid              String              @db.VarChar(255)
+  title             String              @db.VarChar(255)
   description       String?
   userRoleInProject UserRoleInProject[]
+  taskRoleUsers     TaskRoleUser[]
 
   @@map("ProjectRoles")
 }
 
 model Status {
   id            Int             @id @default(autoincrement())
-  name          String          @db.VarChar(255)
+  uuid          String          @db.VarChar(255)
+  title         String          @db.VarChar(255)
   description   String?
   position      Int
+  bgColor       String          @map("bg_color") @db.VarChar(255)
+  final         Boolean
   projectStatus ProjectStatus[]
   tasks         Task[]
 
   @@map("Statuses")
 }
 
-model TaskRole {
-  id           Int            @id @default(autoincrement())
-  name         String         @db.VarChar(255)
-  description  String?
-  taskRoleUser TaskRoleUser[]
-
-  @@map("TaskRoles")
-}
-
 model User {
   id                Int                 @id @default(autoincrement())
+  uuid              String              @db.VarChar(255)
   login             String              @db.VarChar(255)
   password          String              @db.VarChar(255)
+  name              String              @db.VarChar(255)
+  surname           String              @db.VarChar(255)
+  bgColor           String              @map("bg_color") @db.VarChar(255)
   email             String              @db.VarChar(255)
   globalRoleId      Int                 @map("global_role_id")
   createdAt         DateTime            @map("created_at")
@@ -66,6 +66,7 @@ model User {
 
 model Company {
   id          Int           @id @default(autoincrement())
+  uuid        String        @db.VarChar(255)
   name        String        @db.VarChar(255)
   description String?
   phoneNumber String?       @map("phone_number") @db.VarChar(255)
@@ -80,8 +81,10 @@ model Company {
 
 model Project {
   id                Int                 @id @default(autoincrement())
-  name              String              @db.VarChar(255)
+  uuid              String              @db.VarChar(255)
+  title             String              @db.VarChar(255)
   description       String?
+  editableStatuses  Boolean             @map("editable_statuses")
   companyId         Int                 @map("company_id")
   startDate         DateTime?           @map("start_date") @db.Date
   endDate           DateTime?           @map("end_date") @db.Date
@@ -126,7 +129,8 @@ model ProjectUser {
 
 model Task {
   id             Int          @id @default(autoincrement())
-  name           String       @db.VarChar(255)
+  uuid           String       @db.VarChar(255)
+  title          String       @db.VarChar(255)
   description    String
   commentSummary String       @map("commentSummary") @db.VarChar(255)
   userId         Int          @map("user_id")
@@ -134,6 +138,7 @@ model Task {
   messageCount   Int          @map("message_count")
   projectId      Int          @map("project_id")
   position       Int
+  tags           Json
   blockedBy      Int          @map("blocked_by")
   startTimestamp DateTime     @map("start_timestamp")
   endTimestamp   DateTime     @map("end_timestamp")
@@ -175,7 +180,7 @@ model TaskRoleUser {
   roleId Int      @map("role_id")
   user   User     @relation(fields: [userId], references: [id])
   task   Task     @relation(fields: [taskId], references: [id])
-  role   TaskRole @relation(fields: [roleId], references: [id])
+  role   ProjectRole @relation(fields: [roleId], references: [id])
 
   @@id([userId, taskId, roleId])
   @@map("TaskRoleUser")
