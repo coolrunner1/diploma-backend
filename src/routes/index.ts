@@ -117,5 +117,5 @@ projectRouter.delete("/tasks/:taskId", deleteProjectTaskScoped);
 projectRouter.get("/tasks/:taskId/comments", listTaskCommentsScoped);
 projectRouter.post("/tasks/:taskId/comments", validateBody(projectCommentCreate), createTaskCommentScoped);
 
-v1.use("/project/:projectId", projectRouter);
+v1.use("/projects/:projectId", projectRouter);
 apiRouter.use("/api/v1", v1);
