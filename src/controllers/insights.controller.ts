@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from "express";
+import { boardQuerySchema } from "../schemas/index.js";
 import { insightsService } from "../services/insights.service.js";
 
 export const getDbHealth = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -41,7 +42,18 @@ export const getCompanyProjects = async (req: Request, res: Response, next: Next
 export const getProjectBoard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const projectId = Number(req.params.projectId);
-    const result = await insightsService.getProjectBoard(projectId);
+    const parsed = boardQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Invalid query parameters", issues: parsed.error.issues });
+      return;
+    }
+
+    const result = await insightsService.getProjectBoard(projectId, {
+      search: parsed.data.search,
+      type: parsed.data.type,
+      status: parsed.data.status
+    });
+
     if (!result) {
       res.status(404).json({ message: "Not found" });
       return;

@@ -1,4 +1,28 @@
+import { Prisma, task_type } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+
+export type BoardFilters = {
+  search?: string;
+  type?: task_type;
+  status?: number;
+};
+
+type TagItem = { uuid: string; title: string };
+
+const taskMatchesSearch = (task: { title: string; description: string; tags: unknown }, search: string): boolean => {
+  const q = search.toLowerCase();
+  if (task.title.toLowerCase().includes(q) || task.description.toLowerCase().includes(q)) {
+    return true;
+  }
+
+  if (Array.isArray(task.tags)) {
+    return (task.tags as TagItem[]).some(
+      (tag) => tag.title?.toLowerCase().includes(q) || tag.uuid?.toLowerCase().includes(q)
+    );
+  }
+
+  return JSON.stringify(task.tags).toLowerCase().includes(q);
+};
 
 export const insightsService = {
   async dbHealth() {
@@ -35,16 +59,32 @@ export const insightsService = {
     });
   },
 
-  async getProjectBoard(projectId: number) {
-    return prisma.project.findUnique({
+  async getProjectBoard(projectId: number, filters: BoardFilters = {}) {
+    const taskWhere: Prisma.TaskWhereInput = { projectId };
+
+    if (filters.type) {
+      taskWhere.type = filters.type;
+    }
+    if (filters.status) {
+      taskWhere.statusId = filters.status;
+    }
+    if (filters.search) {
+      taskWhere.OR = [
+        { title: { contains: filters.search, mode: "insensitive" } },
+        { description: { contains: filters.search, mode: "insensitive" } }
+      ];
+    }
+
+    const project = await prisma.project.findUnique({
       where: { id: projectId },
       include: {
         projectStatus: {
-          include: {
-            status: true
-          }
+          where: filters.status ? { statusId: filters.status } : undefined,
+          include: { status: true },
+          orderBy: { status: { position: "asc" } }
         },
         tasks: {
+          where: taskWhere,
           include: {
             status: true,
             user: {
@@ -64,23 +104,47 @@ export const insightsService = {
           orderBy: [{ position: "asc" }]
         }
       }
-    }).then((project) => {
-      if (!project) return null;
-
-      return {
-        ...project,
-
-        projectStatus: project.projectStatus.map((ps) => ({
-          ...ps.status
-        })),
-
-        tasks: project.tasks.map((task) => ({
-          ...task,
-          assignee: task.user,
-          user: undefined
-        }))
-      };
     });
+
+    if (!project) {
+      return null;
+    }
+
+    let tasks = project.tasks;
+    if (filters.search) {
+      tasks = tasks.filter((task) => taskMatchesSearch(task, filters.search!));
+    }
+
+    const blockerIds = [...new Set(tasks.map((t) => t.blockedBy).filter((id) => id > 0))];
+    const blockers =
+      blockerIds.length > 0
+        ? await prisma.task.findMany({
+            where: { id: { in: blockerIds }, projectId },
+            select: { id: true, uuid: true, title: true, statusId: true }
+          })
+        : [];
+    const blockerMap = new Map(blockers.map((b) => [b.id, b]));
+
+    return {
+      id: project.id,
+      uuid: project.uuid,
+      title: project.title,
+      description: project.description,
+      editableStatuses: project.editableStatuses,
+      companyId: project.companyId,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      statuses: project.projectStatus.map((ps) => ps.status),
+      tasks: tasks.map((task) => ({
+        ...task,
+        assignee: task.user,
+        user: undefined,
+        blocker:
+          task.blockedBy > 0
+            ? (blockerMap.get(task.blockedBy) ?? { id: task.blockedBy, uuid: null, title: null, statusId: null })
+            : null
+      }))
+    };
   },
 
   getTaskWithComments(taskId: number) {

@@ -1,4 +1,6 @@
 import { NextFunction, Request, Response } from "express";
+import { safeNotify } from "../lib/notify.js";
+import { notificationDispatch } from "../services/notificationDispatch.js";
 import { taskRoleUserService } from "../services/taskRoleUser.service.js";
 
 export const listTaskRoleUsers = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -13,6 +15,21 @@ export const listTaskRoleUsers = async (_req: Request, res: Response, next: Next
 export const createTaskRoleUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const created = await taskRoleUserService.create(req.body);
+    const context = await taskRoleUserService.getAssignmentContext(created.taskId);
+
+    if (context) {
+      safeNotify(() =>
+        notificationDispatch.taskAssigned({
+          assigneeId: created.userId,
+          taskId: context.taskId,
+          taskTitle: context.taskTitle,
+          projectId: context.projectId,
+          projectTitle: context.projectTitle,
+          actorUserId: req.actorUserId
+        })
+      );
+    }
+
     res.status(201).json(created);
   } catch (error) {
     next(error);

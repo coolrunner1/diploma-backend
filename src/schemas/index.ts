@@ -3,10 +3,23 @@ import { z } from "zod";
 const string255 = z.string().min(1).max(255);
 const optionalString255 = z.string().max(255).optional().nullable();
 const isoDate = z.coerce.date();
-const tagSchema = z.object([{
+
+const tagSchema = z.object({
   uuid: string255,
   title: string255
-}]);
+});
+
+const subtaskSchema = z.object({
+  uuid: string255,
+  title: string255,
+  description: z.string()
+});
+
+const tagsSchema = z.array(tagSchema);
+const subtasksSchema = z.array(subtaskSchema).optional().nullable();
+
+const taskTypeSchema = z.enum(["task", "bug", "story", "epic"]);
+const taskPrioritySchema = z.enum(["low", "medium", "high", "critical"]);
 
 export const globalRoleCreate = z.object({
   title: string255,
@@ -15,14 +28,12 @@ export const globalRoleCreate = z.object({
 export const globalRoleUpdate = globalRoleCreate.partial();
 
 export const projectRoleCreate = z.object({
-  uuid: string255,
   title: string255,
   description: z.string().optional().nullable()
 });
 export const projectRoleUpdate = projectRoleCreate.partial();
 
 export const statusCreate = z.object({
-  uuid: string255,
   title: string255,
   description: z.string().optional().nullable(),
   position: z.number().int(),
@@ -32,20 +43,18 @@ export const statusCreate = z.object({
 export const statusUpdate = statusCreate.partial();
 
 export const userCreate = z.object({
-  uuid: string255,
   login: string255,
   password: string255,
   name: string255,
   surname: string255,
-  bgColor: string255,
+  bgColor: string255.optional(),
   email: z.string().email().max(255),
   globalRoleId: z.number().int(),
-  createdAt: isoDate
+  createdAt: isoDate.optional()
 });
 export const userUpdate = userCreate.partial();
 
 export const companyCreate = z.object({
-  uuid: string255,
   name: string255,
   description: z.string().optional().nullable(),
   phoneNumber: optionalString255,
@@ -55,7 +64,6 @@ export const companyCreate = z.object({
 export const companyUpdate = companyCreate.partial();
 
 export const projectCreate = z.object({
-  uuid: string255,
   title: string255,
   description: z.string().optional().nullable(),
   editableStatuses: z.boolean(),
@@ -78,7 +86,6 @@ export const projectUserCreate = z.object({
 export const projectUserUpdate = projectUserCreate.partial();
 
 export const taskCreate = z.object({
-  uuid: string255,
   title: string255,
   description: z.string().min(1),
   commentSummary: string255,
@@ -87,7 +94,10 @@ export const taskCreate = z.object({
   messageCount: z.number().int(),
   projectId: z.number().int(),
   position: z.number().int(),
-  tags: tagSchema,
+  type: taskTypeSchema,
+  priority: taskPrioritySchema,
+  tags: tagsSchema,
+  subtasks: subtasksSchema,
   blockedBy: z.number().int(),
   startTimestamp: isoDate,
   endTimestamp: isoDate
@@ -107,6 +117,7 @@ export const commentCreate = z.object({
   text: z.string().min(1)
 });
 export const commentUpdate = commentCreate.partial();
+
 export const projectCommentCreate = z.object({
   userId: z.number().int(),
   text: z.string().min(1)
@@ -124,7 +135,6 @@ export const taskRoleUserCreate = z.object({
 });
 
 export const projectStatusCreateForProject = z.object({
-  uuid: string255,
   title: string255,
   description: z.string().optional().nullable(),
   position: z.number().int(),
@@ -132,9 +142,23 @@ export const projectStatusCreateForProject = z.object({
   final: z.boolean()
 });
 
+export const projectStatusUpdateForProject = projectStatusCreateForProject.partial();
+
 export const projectTaskCreate = taskCreate.omit({ projectId: true });
 export const projectTaskUpdate = projectTaskCreate.partial();
 
 export const projectMemberCreate = z.object({
   userId: z.number().int()
+});
+
+export const boardQuerySchema = z.object({
+  search: z.string().optional(),
+  type: taskTypeSchema.optional(),
+  status: z.coerce.number().int().positive().optional()
+});
+
+export const taskCheckCorrectnessBody = z.object({
+  title: string255,
+  description: z.string().min(1),
+  assignee: z.number().int().positive()
 });

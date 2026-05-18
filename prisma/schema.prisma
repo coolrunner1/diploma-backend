@@ -60,8 +60,33 @@ model User {
   userRoleInProject UserRoleInProject[]
   comments          Comment[]
   taskRoleUser      TaskRoleUser[]
+  notifications     Notification[]
 
   @@map("Users")
+}
+
+enum notification_type {
+  task_assigned
+  task_comment
+  task_status_changed
+  task_blocked
+  project_member_added
+  task_deadline_approaching
+}
+
+model Notification {
+  id        Int               @id @default(autoincrement())
+  userId    Int               @map("user_id")
+  type      notification_type
+  title     String            @db.VarChar(255)
+  message   String
+  read      Boolean           @default(false)
+  data      Json?
+  createdAt DateTime          @default(now()) @map("created_at")
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@map("Notifications")
 }
 
 model Company {
@@ -146,7 +171,7 @@ model Task {
   uuid           String         @db.VarChar(255)
   title          String         @db.VarChar(255)
   description    String
-  commentSummary String         @map("commentSummary") @db.VarChar(255)
+  commentSummary String         @map("commentSummary") @db.Text
   userId         Int            @map("user_id")
   statusId       Int            @map("status_id")
   messageCount   Int            @map("message_count")
@@ -155,6 +180,7 @@ model Task {
   type           task_type
   priority       task_priority
   tags           Json
+  subtasks       Json?
   blockedBy      Int            @map("blocked_by")
   startTimestamp DateTime       @map("start_timestamp")
   endTimestamp   DateTime       @map("end_timestamp")

@@ -1,9 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "../src/lib/password.js";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clear child/join tables first to satisfy foreign keys.
+  await prisma.notification.deleteMany();
   await prisma.taskRoleUser.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.userRoleInProject.deleteMany();
@@ -17,6 +18,11 @@ async function main() {
   await prisma.status.deleteMany();
   await prisma.projectRole.deleteMany();
   await prisma.globalRole.deleteMany();
+
+  const adminHash = await hashPassword("admin123");
+  const aliceHash = await hashPassword("alice123");
+  const bobHash = await hashPassword("bob123");
+  const carolHash = await hashPassword("carol123");
 
   await prisma.globalRole.createMany({
     data: [
@@ -36,10 +42,13 @@ async function main() {
 
   await prisma.status.createMany({
     data: [
-      { id: 1, uuid: "status-1", title: "Backlog", description: "Waiting", position: 1, bgColor: "#9ca3af", final: false },
-      { id: 2, uuid: "status-2", title: "In Progress", description: "Active work", position: 2, bgColor: "#3b82f6", final: false },
-      { id: 3, uuid: "status-3", title: "Review", description: "Under review", position: 3, bgColor: "#f59e0b", final: false },
-      { id: 4, uuid: "status-4", title: "Done", description: "Completed", position: 4, bgColor: "#10b981", final: true }
+      { id: 1, uuid: "status-todo", title: "To Do", description: null, position: 1, bgColor: "#9ca3af", final: false },
+      { id: 2, uuid: "status-in-progress", title: "In Progress", description: null, position: 2, bgColor: "#3b82f6", final: false },
+      { id: 3, uuid: "status-in-testing", title: "In Testing", description: null, position: 3, bgColor: "#f59e0b", final: false },
+      { id: 4, uuid: "status-rejected", title: "Rejected", description: null, position: 4, bgColor: "#ef4444", final: false },
+      { id: 5, uuid: "status-done", title: "Done", description: null, position: 5, bgColor: "#10b981", final: true },
+      { id: 6, uuid: "status-on-hold", title: "On Hold", description: null, position: 6, bgColor: "#6b7280", final: false },
+      { id: 7, uuid: "status-blocked", title: "Blocked", description: null, position: 7, bgColor: "#dc2626", final: false }
     ]
   });
 
@@ -49,7 +58,7 @@ async function main() {
         id: 1,
         uuid: "user-1",
         login: "admin",
-        password: "admin123",
+        password: adminHash,
         name: "Admin",
         surname: "Root",
         bgColor: "#111827",
@@ -61,7 +70,7 @@ async function main() {
         id: 2,
         uuid: "user-2",
         login: "alice",
-        password: "alice123",
+        password: aliceHash,
         name: "Alice",
         surname: "Stone",
         bgColor: "#2563eb",
@@ -73,7 +82,7 @@ async function main() {
         id: 3,
         uuid: "user-3",
         login: "bob",
-        password: "bob123",
+        password: bobHash,
         name: "Bob",
         surname: "Mills",
         bgColor: "#7c3aed",
@@ -85,7 +94,7 @@ async function main() {
         id: 4,
         uuid: "user-4",
         login: "carol",
-        password: "carol123",
+        password: carolHash,
         name: "Carol",
         surname: "West",
         bgColor: "#db2777",
@@ -181,12 +190,15 @@ async function main() {
       { projectId: 1, statusId: 2 },
       { projectId: 1, statusId: 3 },
       { projectId: 1, statusId: 4 },
+      { projectId: 1, statusId: 5 },
       { projectId: 2, statusId: 1 },
       { projectId: 2, statusId: 2 },
+      { projectId: 2, statusId: 3 },
       { projectId: 2, statusId: 4 },
+      { projectId: 2, statusId: 5 },
       { projectId: 3, statusId: 1 },
       { projectId: 3, statusId: 2 },
-      { projectId: 3, statusId: 4 }
+      { projectId: 3, statusId: 5 }
     ]
   });
 
@@ -210,13 +222,17 @@ async function main() {
         description: "Prepare relational schema for MVP",
         commentSummary: "Initial schema draft",
         userId: 2,
-        statusId: 4,
+        statusId: 5,
         messageCount: 2,
         projectId: 1,
         position: 1,
         type: "epic",
         priority: "medium",
         tags: [{ uuid: "tag-arch", title: "Architecture" }],
+        subtasks: [
+          { uuid: "sub-1", title: "ER diagram", description: "Draw entities and relations" },
+          { uuid: "sub-2", title: "Review", description: "Team review session" }
+        ],
         blockedBy: 0,
         startTimestamp: new Date("2026-01-11T09:00:00.000Z"),
         endTimestamp: new Date("2026-01-12T18:00:00.000Z")
@@ -235,6 +251,7 @@ async function main() {
         type: "story",
         priority: "critical",
         tags: [{ uuid: "tag-backend", title: "Backend" }],
+        subtasks: [{ uuid: "sub-3", title: "JWT middleware", description: "Add token validation" }],
         blockedBy: 1,
         startTimestamp: new Date("2026-01-13T09:00:00.000Z"),
         endTimestamp: new Date("2026-01-20T18:00:00.000Z")
@@ -252,7 +269,11 @@ async function main() {
         position: 1,
         type: "bug",
         priority: "high",
-        tags: [{ uuid: "tag-frontend", title: "Frontend" }, { uuid: "tagfdfssdfntend", title: "Design" }],
+        tags: [
+          { uuid: "tag-frontend", title: "Frontend" },
+          { uuid: "tag-design", title: "Design" }
+        ],
+        subtasks: null,
         blockedBy: 0,
         startTimestamp: new Date("2026-02-02T10:00:00.000Z"),
         endTimestamp: new Date("2026-02-05T18:00:00.000Z")
@@ -264,13 +285,14 @@ async function main() {
         description: "Automate build and tests",
         commentSummary: "CI configured",
         userId: 1,
-        statusId: 4,
+        statusId: 5,
         messageCount: 2,
         projectId: 3,
         position: 1,
         type: "task",
         priority: "low",
         tags: [{ uuid: "tag-devops", title: "DevOps" }],
+        subtasks: [],
         blockedBy: 0,
         startTimestamp: new Date("2026-03-02T09:00:00.000Z"),
         endTimestamp: new Date("2026-03-04T17:00:00.000Z")
@@ -285,6 +307,27 @@ async function main() {
       { id: 3, userId: 3, taskId: 2, text: "Will add in the next commit." },
       { id: 4, userId: 4, taskId: 3, text: "Layout ready for QA." },
       { id: 5, userId: 1, taskId: 4, text: "Pipeline passes on main." }
+    ]
+  });
+
+  await prisma.notification.createMany({
+    data: [
+      {
+        userId: 2,
+        type: "task_assigned",
+        title: "Task assigned",
+        message: 'You were assigned to "Implement auth endpoints"',
+        read: false,
+        data: { projectId: 1, taskId: 2 }
+      },
+      {
+        userId: 3,
+        type: "task_comment",
+        title: "New comment",
+        message: 'Admin Root commented on your task',
+        read: false,
+        data: { projectId: 1, taskId: 2, commentId: 2 }
+      }
     ]
   });
 
